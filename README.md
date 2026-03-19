@@ -19,7 +19,7 @@ Use the following steps to run the project locally:
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/videosdk-live/agent-starter-flutter.git
+git clone https://github.com/videosdk-live/agent-starter-app-flutter.git
 cd agent-starter-flutter
 ```
 
