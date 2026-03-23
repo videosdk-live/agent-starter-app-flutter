@@ -39,6 +39,7 @@ Update the `.env` file with the following values:
 AUTH_TOKEN=your_videosdk_auth_token
 AGENT_ID=your_agent_id
 MEETING_ID=your_meeting_id (optional)
+VERSION_ID=your_agent_version_id(optional)
 ```
 
 > [!TIP]
