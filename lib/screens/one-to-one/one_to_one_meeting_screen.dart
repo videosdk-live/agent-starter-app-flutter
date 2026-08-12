@@ -147,7 +147,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
     if (_isDispatchingAgent) return;
 
     final agentId = dotenv.env['AGENT_ID']?.trim() ?? '';
-    String? versionId = dotenv.env['VERSION_ID']?.trim();
+    String? versionTag = dotenv.env['VERSION_TAG']?.trim();
 
     if (agentId.isEmpty) {
       showSnackBarMessage(
@@ -160,8 +160,8 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
     setState(() => _isDispatchingAgent = true);
 
     try {
-      // Step 1 — fetch latest versionId for this agent only if not present in .env
-      if (versionId == null || versionId.isEmpty) {
+      // Step 1 — fetch latest versionTag for this agent only if not present in .env
+      if (versionTag == null || versionTag.isEmpty) {
         final versionsRes = await http.get(
           Uri.parse('https://api.videosdk.live/ai/v1/agents/$agentId/versions'),
           headers: {
@@ -170,7 +170,12 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
           },
         );
 
+        print(
+            '[_dispatchAgent] fetch versions: status=${versionsRes.statusCode} body=${versionsRes.body}'); // ← debug log
+
         if (versionsRes.statusCode != 200) {
+          debugPrint(
+              '[_dispatchAgent] fetch versions failed: status=${versionsRes.statusCode} body=${versionsRes.body}');
           _goBackWithError('Failed to fetch agent versions');
           return; // ← stop execution
         }
@@ -184,11 +189,11 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
           return; // ← stop execution
         }
 
-        versionId =
-            (versions.first as Map<String, dynamic>)['versionId'] as String?;
+        versionTag =
+            (versions.first as Map<String, dynamic>)['versionTag'] as String?;
       }
 
-      if (versionId == null || versionId.isEmpty) {
+      if (versionTag == null || versionTag.isEmpty) {
         _goBackWithError('Agent version ID could not be determined');
         return;
       }
@@ -203,11 +208,15 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
         body: jsonEncode({
           'meetingId': meetingId,
           'agentId': agentId,
-          'versionId': versionId,
+          'versionTag': versionTag,
         }),
       );
 
+      print(
+          '[_dispatchAgent] dispatch agent: status=${dispatchRes.statusCode} body=${dispatchRes.body}'); // ← debug log
+
       if (dispatchRes.statusCode == 200 || dispatchRes.statusCode == 201) {
+        VideoSDK.setLogLevel(LogLevel.all);
         Room room = VideoSDK.createRoom(
           roomId: meetingId,
           token: widget.token,
@@ -227,11 +236,14 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
         registerMeetingEvents(room);
         room.join();
       } else {
+        debugPrint(
+            '[_dispatchAgent] dispatch failed: status=${dispatchRes.statusCode} body=${dispatchRes.body}');
         final body = jsonDecode(dispatchRes.body) as Map<String, dynamic>;
         _goBackWithError(body['message'] ?? 'Agent dispatch failed');
         return; // ← stop execution
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[_dispatchAgent] exception: $e\n$stackTrace');
       _goBackWithError(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isDispatchingAgent = false);
@@ -265,7 +277,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
     _checkPermissions();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _dispatchAgent("3ubt-utex-8knt");
+        _dispatchAgent(widget.meetingId);
       }
     });
   }
