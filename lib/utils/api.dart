@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -31,6 +32,8 @@ Future<String> fetchToken(BuildContext context) async {
   if (_AUTH_URL?.isNotEmpty ?? false) {
     final Uri getTokenUrl = Uri.parse('$_AUTH_URL/get-token');
     final http.Response tokenResponse = await http.get(getTokenUrl);
+    debugPrint(
+        '[fetchToken] GET $getTokenUrl -> status=${tokenResponse.statusCode} body=${tokenResponse.body}');
     _AUTH_TOKEN = json.decode(tokenResponse.body)['token'];
   }
 

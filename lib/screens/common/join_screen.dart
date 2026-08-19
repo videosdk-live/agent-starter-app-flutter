@@ -200,6 +200,7 @@ class _JoinScreenState extends State<JoinScreen> with WidgetsBindingObserver {
         }
         roomId = envRoomId;
       } else {
+        VideoSDK.setLogLevel(LogLevel.error); // Reduce log verbosity for production
         // 2b. No room ID in env — create a fresh one
         roomId = await createMeeting(_token);
       }
