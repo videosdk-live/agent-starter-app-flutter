@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, depend_on_referenced_packages
 
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -160,45 +161,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
     setState(() => _isDispatchingAgent = true);
 
     try {
-      // Step 1 — fetch latest versionTag for this agent only if not present in .env
-      if (versionTag == null || versionTag.isEmpty) {
-        final versionsRes = await http.get(
-          Uri.parse('https://api.videosdk.live/ai/v1/agents/$agentId/versions'),
-          headers: {
-            'Authorization': widget.token,
-            'Content-Type': 'application/json',
-          },
-        );
-
-        print(
-            '[_dispatchAgent] fetch versions: status=${versionsRes.statusCode} body=${versionsRes.body}'); // ← debug log
-
-        if (versionsRes.statusCode != 200) {
-          debugPrint(
-              '[_dispatchAgent] fetch versions failed: status=${versionsRes.statusCode} body=${versionsRes.body}');
-          _goBackWithError('Failed to fetch agent versions');
-          return; // ← stop execution
-        }
-
-        final versionsBody =
-            jsonDecode(versionsRes.body) as Map<String, dynamic>;
-        final versions = versionsBody['versions'] as List<dynamic>?;
-
-        if (versions == null || versions.isEmpty) {
-          _goBackWithError('No versions found for agent');
-          return; // ← stop execution
-        }
-
-        versionTag =
-            (versions.first as Map<String, dynamic>)['versionTag'] as String?;
-      }
-
-      if (versionTag == null || versionTag.isEmpty) {
-        _goBackWithError('Agent version ID could not be determined');
-        return;
-      }
-
-      // Step 2 — dispatch agent
+      // Dispatch agent — without a versionTag the latest deployed version is used
       final dispatchRes = await http.post(
         Uri.parse('https://api.videosdk.live/v2/agent/dispatch'),
         headers: {
@@ -208,7 +171,8 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
         body: jsonEncode({
           'meetingId': meetingId,
           'agentId': agentId,
-          'versionTag': versionTag,
+          if (versionTag != null && versionTag.isNotEmpty)
+            'versionTag': versionTag,
         }),
       );
 
@@ -1055,7 +1019,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
       "CHAT",
       msg,
       const PubSubPublishOptions(persist: true),
-    );
+    ).catchError((Object e) => log("Publish failed: $e"));
     _chatController.clear();
     FocusScope.of(context).unfocus();
   }
@@ -1474,13 +1438,13 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
       }
     });
 
-    _meeting.on(
-      Events.error,
-      (error) => showSnackBarMessage(
+    _meeting.on(Events.error, (error) {
+      debugPrint('[Events.error] $error');
+      showSnackBarMessage(
         message: "${error['name']} :: ${error['message']}",
         context: context,
-      ),
-    );
+      );
+    });
   }
 
   void _subscribeToAgentEvents(Room _meeting) {
@@ -1542,6 +1506,9 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
           );
         }
       }
+    }).catchError((Object e) {
+      log("Subscribe failed: $e");
+      return PubSubMessages(messages: const []);
     });
   }
 
