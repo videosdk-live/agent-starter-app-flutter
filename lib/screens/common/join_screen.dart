@@ -206,7 +206,8 @@ class _JoinScreenState extends State<JoinScreen> with WidgetsBindingObserver {
       }
 
       _navigateToMeeting(roomId);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[_onTalkToAgent] exception: $e\n$stackTrace');
       if (mounted) {
         setState(() => _isConnecting = false);
         showSnackBarMessage(
