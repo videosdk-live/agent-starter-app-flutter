@@ -23,8 +23,11 @@ android {
         applicationId = "live.videosdk.rtc.flutter"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        minSdk = 24
+        targetSdk = 36
+        ndk {
+            abiFilters += listOf("arm64-v8a") // the SDK ships arm64-v8a only
+        }
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

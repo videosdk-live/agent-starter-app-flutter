@@ -15,7 +15,7 @@
 		8886E98C28F7D3B7001715E9 /* SampleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8886E98B28F7D3B7001715E9 /* SampleHandler.swift */; };
 		8886E99028F7D3B7001715E9 /* FlutterBroadcast.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 8886E98728F7D3B7001715E9 /* FlutterBroadcast.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8886E99A28F7D417001715E9 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8886E99628F7D417001715E9 /* Atomic.swift */; };
-		8886E99B28F7D417001715E9 /* DarwinNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8886E99728F7D417001715E9 /* DarwinNotificationCenter.swift */; };
+		8886E99B28F7D417001715E9 /* DarwinNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8886E99728F7D417001715E9 /* DarwinNotification.swift */; };
 		8886E99C28F7D417001715E9 /* SampleUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8886E99828F7D417001715E9 /* SampleUploader.swift */; };
 		8886E99D28F7D417001715E9 /* SocketConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8886E99928F7D417001715E9 /* SocketConnection.swift */; };
 		8B49C51691EC6C83D79ABF7C /* libPods-Runner.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E358D88C9BB4D5D8F555D695 /* libPods-Runner.a */; };
@@ -73,7 +73,7 @@
 		8886E98B28F7D3B7001715E9 /* SampleHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleHandler.swift; sourceTree = "<group>"; };
 		8886E98D28F7D3B7001715E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8886E99628F7D417001715E9 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
-		8886E99728F7D417001715E9 /* DarwinNotificationCenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinNotificationCenter.swift; sourceTree = "<group>"; };
+		8886E99728F7D417001715E9 /* DarwinNotification.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DarwinNotification.swift; sourceTree = "<group>"; };
 		8886E99828F7D417001715E9 /* SampleUploader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SampleUploader.swift; sourceTree = "<group>"; };
 		8886E99928F7D417001715E9 /* SocketConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SocketConnection.swift; sourceTree = "<group>"; };
 		8886E99E28F7D465001715E9 /* FlutterBroadcastDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FlutterBroadcastDebug.entitlements; sourceTree = "<group>"; };
@@ -137,7 +137,7 @@
 				88A849BA294763BB005B64B0 /* FlutterBroadcastRelease.entitlements */,
 				8886E99E28F7D465001715E9 /* FlutterBroadcastDebug.entitlements */,
 				8886E99628F7D417001715E9 /* Atomic.swift */,
-				8886E99728F7D417001715E9 /* DarwinNotificationCenter.swift */,
+				8886E99728F7D417001715E9 /* DarwinNotification.swift */,
 				8886E99828F7D417001715E9 /* SampleUploader.swift */,
 				8886E99928F7D417001715E9 /* SocketConnection.swift */,
 				8886E98B28F7D3B7001715E9 /* SampleHandler.swift */,
@@ -228,7 +228,6 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				8886E99528F7D3B7001715E9 /* Embed App Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
-				5BDAB8E9EFF0080FC82F6C57 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -322,23 +321,6 @@
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
 		};
-		5BDAB8E9EFF0080FC82F6C57 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -385,7 +367,7 @@
 			files = (
 				8886E99A28F7D417001715E9 /* Atomic.swift in Sources */,
 				8886E99C28F7D417001715E9 /* SampleUploader.swift in Sources */,
-				8886E99B28F7D417001715E9 /* DarwinNotificationCenter.swift in Sources */,
+				8886E99B28F7D417001715E9 /* DarwinNotification.swift in Sources */,
 				8886E98C28F7D3B7001715E9 /* SampleHandler.swift in Sources */,
 				8886E99D28F7D417001715E9 /* SocketConnection.swift in Sources */,
 			);
@@ -472,7 +454,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -493,7 +475,7 @@
 				DEVELOPMENT_TEAM = 8GZ776NSU2;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -526,7 +508,7 @@
 				INFOPLIST_FILE = FlutterBroadcast/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FlutterBroadcast;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -564,7 +546,7 @@
 				INFOPLIST_FILE = FlutterBroadcast/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FlutterBroadcast;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -598,7 +580,7 @@
 				INFOPLIST_FILE = FlutterBroadcast/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FlutterBroadcast;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -663,7 +645,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -713,7 +695,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -737,7 +719,7 @@
 				DEVELOPMENT_TEAM = 8GZ776NSU2;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -767,7 +749,7 @@
 				DEVELOPMENT_TEAM = 8GZ776NSU2;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

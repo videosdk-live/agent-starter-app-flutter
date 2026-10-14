@@ -5,12 +5,12 @@ publish_to: "none"
 
 version: 1.0.0+14
 environment:
-  sdk: ">=2.14.0 <3.0.0"
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  videosdk: ^4.0.1
+  videosdk: ^5.0.0
   permission_handler: ^12.0.3 # 13.x needs compileSdk 37 (AGP 8.13+)
   http: ^1.1.0
   flutter_dotenv: ^5.0.2
@@ -30,6 +30,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  config:
+    enable-swift-package-manager: true
 
   assets:
     - assets/
