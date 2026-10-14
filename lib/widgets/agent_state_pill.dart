@@ -49,7 +49,7 @@ class AgentStatePill extends StatelessWidget {
 
   _PillConfig _pillConfig(AgentState s) {
     switch (s) {
-      case AgentState.speaking:
+      case AgentState.SPEAKING:
         return _PillConfig(
           label: 'Speaking',
           dotColor: const Color(0xFF38BDF8),
@@ -57,7 +57,7 @@ class AgentStatePill extends StatelessWidget {
           bgColor: const Color(0xFF0EA5E9).withOpacity(0.08),
           textColor: const Color(0xFF7DD3FC),
         );
-      case AgentState.idle:
+      case AgentState.IDLE:
         return _PillConfig(
           label: 'Idle',
           dotColor: const Color(0xFFE1E2EA),
@@ -65,7 +65,7 @@ class AgentStatePill extends StatelessWidget {
           bgColor: const Color(0xFFE1E2EA).withOpacity(0.05),
           textColor: const Color(0xFFE1E2EA),
         );
-      case AgentState.thinking:
+      case AgentState.THINKING:
         return _PillConfig(
           label: 'Thinking',
           dotColor: const Color(0xFFA78BFA),
@@ -73,7 +73,7 @@ class AgentStatePill extends StatelessWidget {
           bgColor: const Color(0xFF7C3AED).withOpacity(0.08),
           textColor: const Color(0xFFC4B5FD),
         );
-      case AgentState.listening:
+      case AgentState.LISTENING:
         return _PillConfig(
           label: 'Listening',
           dotColor: const Color(0xFF9CA3AF),
@@ -87,10 +87,10 @@ class AgentStatePill extends StatelessWidget {
 
 AgentState parseAgentState(dynamic raw) {
   final s = raw?.toString().toLowerCase() ?? '';
-  if (s.contains('listen')) return AgentState.listening;
-  if (s.contains('speak')) return AgentState.speaking;
-  if (s.contains('think') || s.contains('process')) return AgentState.thinking;
-  return AgentState.idle;
+  if (s.contains('listen')) return AgentState.LISTENING;
+  if (s.contains('speak')) return AgentState.SPEAKING;
+  if (s.contains('think') || s.contains('process')) return AgentState.THINKING;
+  return AgentState.IDLE;
 }
 
 class _PillConfig {

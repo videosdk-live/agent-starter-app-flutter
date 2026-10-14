@@ -17,19 +17,16 @@ import 'package:agent_starter_flutter/widgets/meeting_orb.dart';
 import 'package:agent_starter_flutter/widgets/permission_denied_dialog.dart';
 import 'package:agent_starter_flutter/widgets/top_header.dart';
 import 'package:agent_starter_flutter/widgets/transcript_view.dart';
-import 'package:videosdk_webrtc/flutter_webrtc.dart';
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 import '../../utils/toast.dart';
-import '../../widgets/screen_share/screen_select_dialog.dart'
-    show ScreenSelectDialog;
 import '../common/join_screen.dart';
 import 'package:agent_starter_flutter/widgets/agent_state_pill.dart';
 
-List<VideoDeviceInfo>? cameras = [];
-List<AudioDeviceInfo>? mics = [];
+List<CameraDeviceInfo>? cameras = [];
+List<MicrophoneDeviceInfo>? mics = [];
 bool isFrontCam = true;
 
 // ─────────────────────────────────────────────
@@ -43,9 +40,9 @@ bool isFrontCam = true;
 class OneToOneMeetingScreen extends StatefulWidget {
   final String meetingId, token, displayName;
   final bool micEnabled, camEnabled, chatEnabled;
-  final AudioDeviceInfo? selectedAudioOutputDevice, selectedAudioInputDevice;
-  final CustomTrack? cameraTrack;
-  final CustomTrack? micTrack;
+  final MicrophoneDeviceInfo? selectedAudioOutputDevice, selectedAudioInputDevice;
+  final CustomStreamTrack? cameraTrack;
+  final CustomStreamTrack? micTrack;
 
   bool isVideoPermissionAsked = false;
 
@@ -77,15 +74,15 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
   bool _joined = false;
   bool _moreThan2Participants = false;
   final DateTime _callStartTime = DateTime.now();
-  Stream? shareStream;
-  Stream? videoStream;
-  Stream? audioStream;
-  Stream? remoteParticipantShareStream;
+  RTCStream? shareStream;
+  RTCStream? videoStream;
+  RTCStream? audioStream;
+  RTCStream? remoteParticipantShareStream;
 
   bool fullScreen = false;
 
   // Agent state
-  AgentState _agentState = AgentState.idle;
+  AgentState _agentState = AgentState.IDLE;
 
   // Transcript
   final List<TranscriptMessage> transcriptMessages = [];
@@ -132,7 +129,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
         : null;
     if (remoteParticipant != null) {
       final hasRemoteVideo =
-          remoteParticipant.streams.values.any((s) => s.kind == 'video');
+          remoteParticipant.streams.values.any((s) => s.kind == MediaType.VIDEO);
       if (hasRemoteVideo) return false;
     }
 
@@ -180,22 +177,17 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
           '[_dispatchAgent] dispatch agent: status=${dispatchRes.statusCode} body=${dispatchRes.body}'); // ← debug log
 
       if (dispatchRes.statusCode == 200 || dispatchRes.statusCode == 201) {
-        VideoSDK.setLogLevel(LogLevel.all);
+        VideoSDK.setLogLevel(LogLevel.ALL);
         Room room = VideoSDK.createRoom(
           roomId: meetingId,
           token: widget.token,
-          displayName: widget.displayName,
+          participantName: widget.displayName,
           micEnabled: widget.micEnabled,
           camEnabled: false,
-          maxResolution: 'hd',
+          maxResolution: MaxResolution.HD,
           multiStream: false,
-          customCameraVideoTrack: widget.cameraTrack,
-          customMicrophoneAudioTrack: widget.micTrack,
-          notification: const NotificationInfo(
-            title: "Video SDK",
-            message: "Video SDK is sharing screen in the meeting",
-            icon: "notification_share",
-          ),
+          customCameraTrack: widget.cameraTrack,
+          customMicrophoneTrack: widget.micTrack,
         );
         registerMeetingEvents(room);
         room.join();
@@ -308,8 +300,8 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
 // ─────────────────────────────────────────────
   Future<void> _showSpeakerBottomSheet() async {
     // Collect audio-output devices (same list the chevron used)
-    final List<AudioDeviceInfo> speakers = [];
-    final allDevices = await VideoSDK.getAudioDevices();
+    final List<MicrophoneDeviceInfo> speakers = [];
+    final allDevices = await VideoSDK.getMics();
     if (allDevices != null) {
       for (final d in allDevices) {
         if (d.kind == 'audiooutput') speakers.add(d);
@@ -363,7 +355,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
                   onTap: () {
                     setState(
                         () => _selectedAudioDeviceName = speakers[i].label);
-                    meeting.switchAudioDevice(speakers[i]);
+                    meeting.setAudioDevice(speakers[i]);
                     Navigator.of(ctx).pop();
                   },
                   child: Padding(
@@ -418,17 +410,12 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
         meeting.disableScreenShare();
         setState(() => _isScreenSharing = false);
       } else {
-        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS)) {
-          final source = await selectScreenSourceDialog(context);
-          if (source != null) {
-            meeting.enableScreenShare(source: source, enableAudio: true);
-            setState(() => _isScreenSharing = true);
-          }
-        } else if (!kIsWeb && Platform.isAndroid) {
-          meeting.enableScreenShare(enableAudio: true);
-          setState(() => _isScreenSharing = true);
-        } else {
-          meeting.enableScreenShare();
+        final track = await VideoSDK.createScreenShareVideoTrack(
+          withAudio: Platform.isAndroid, // audio capture is Android only
+        );
+        // null when the user declines the capture prompt
+        if (track != null) {
+          await meeting.enableScreenShare(customTrack: track);
           setState(() => _isScreenSharing = true);
         }
       }
@@ -436,15 +423,6 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
       await Future.delayed(const Duration(milliseconds: 500));
       setState(() => _isTogglingScreenShare = false);
     }
-  }
-
-  Future<DesktopCapturerSource?> selectScreenSourceDialog(
-      BuildContext context) async {
-    final source = await showDialog<DesktopCapturerSource>(
-      context: context,
-      builder: (context) => ScreenSelectDialog(meeting: meeting),
-    );
-    return source;
   }
 
   // ─────────────────────────────────────────────
@@ -463,7 +441,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
       selectedDeviceName: _selectedAudioDeviceName ?? names.first,
       onSelect: (i) {
         setState(() => _selectedAudioDeviceName = names[i]);
-        meeting.changeMic(devices[i]);
+        meeting.changeMic(deviceId: devices[i].deviceId);
       },
     );
     setState(() => _isMicMenuOpen = false);
@@ -476,7 +454,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
   //         ? meeting.participants.values.first
   //         : null;
   //     if (remoteParticipant == null) return false;
-  //     return remoteParticipant.streams.values.any((s) => s.kind == 'video');
+  //     return remoteParticipant.streams.values.any((s) => s.kind == MediaType.VIDEO);
   //   }
 
   //   // Normal mode → show PiP only when local cam is on
@@ -490,7 +468,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
           ? meeting.participants.values.first
           : null;
       final hasRemoteVideo = remoteParticipant != null &&
-          remoteParticipant.streams.values.any((s) => s.kind == 'video');
+          remoteParticipant.streams.values.any((s) => s.kind == MediaType.VIDEO);
 
       return hasRemoteVideo ||
           videoStream != null; // ← was: return hasRemoteVideo
@@ -517,7 +495,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
           (devices.isNotEmpty ? devices.first.label : null),
       onSelect: (i) {
         setState(() => _selectedVideoDeviceName = names[i]);
-        meeting.changeCam(devices[i]);
+        meeting.changeCam(deviceId: devices[i].deviceId);
         setState(() {
           isFrontCam = devices[i].label.toLowerCase().contains("front") ||
               devices[i].label.toLowerCase().contains("user");
@@ -527,14 +505,14 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
     setState(() => _isCamMenuOpen = false);
   }
 
-  Stream? _getRemoteVideoStream() {
+  RTCStream? _getRemoteVideoStream() {
     final remoteParticipant = meeting.participants.values.isNotEmpty
         ? meeting.participants.values.first
         : null;
     if (remoteParticipant == null) return null;
     try {
       return remoteParticipant.streams.values
-          .firstWhere((s) => s.kind == 'video');
+          .firstWhere((s) => s.kind == MediaType.VIDEO);
     } catch (_) {
       return null;
     }
@@ -1029,11 +1007,11 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
         ? meeting.participants.values.first
         : null;
 
-    Stream? remoteVideoStream;
+    RTCStream? remoteVideoStream;
     if (remoteParticipant != null) {
       try {
         remoteVideoStream = remoteParticipant.streams.values
-            .firstWhere((s) => s.kind == 'video');
+            .firstWhere((s) => s.kind == MediaType.VIDEO);
       } catch (_) {
         remoteVideoStream = null;
       }
@@ -1116,11 +1094,11 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
           ? meeting.participants.values.first
           : null;
 
-      Stream? remoteVideoStream;
+      RTCStream? remoteVideoStream;
       if (remoteParticipant != null) {
         try {
           remoteVideoStream = remoteParticipant.streams.values
-              .firstWhere((s) => s.kind == 'video');
+              .firstWhere((s) => s.kind == MediaType.VIDEO);
         } catch (_) {
           remoteVideoStream = null;
         }
@@ -1189,7 +1167,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
   Future<void> _showCamSwitchMenu(TapDownDetails details) async {
     if (cameras == null || cameras!.length < 2) return;
 
-    VideoDeviceInfo? deviceToSwitch;
+    CameraDeviceInfo? deviceToSwitch;
 
     if (isFrontCam) {
       deviceToSwitch = cameras!.firstWhere(
@@ -1211,7 +1189,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
       );
     }
 
-    meeting.changeCam(deviceToSwitch);
+    meeting.changeCam(deviceId: deviceToSwitch.deviceId);
 
     setState(() {
       isFrontCam = deviceToSwitch!.label.toLowerCase().contains("front") ||
@@ -1334,17 +1312,9 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
   //  Meeting events
   // ─────────────────────────────────────────────
   void registerMeetingEvents(Room _meeting) {
-    VideoSDK.on(Events.deviceChanged, () async {
-      cameras = await VideoSDK.getVideoDevices();
-      List<AudioDeviceInfo>? audioDeviceInfo = await VideoSDK.getAudioDevices();
-      mics = [];
-      if (audioDeviceInfo != null) {
-        for (var device in audioDeviceInfo) {
-          if (device.kind == 'audioinput') {
-            mics?.add(device);
-          }
-        }
-      }
+    _meeting.setAudioDeviceChangeListener((selected, devices) async {
+      cameras = await VideoSDK.getCameras();
+      mics = devices.where((d) => d.kind == 'audioinput').toList();
     });
     _meeting.on(Events.speakerChanged, (activeSpeakerId) {
       setState(() => _activeSpeakerId = activeSpeakerId);
@@ -1361,18 +1331,15 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
           meeting = _meeting;
           _joined = true;
         });
-        cameras = await VideoSDK.getVideoDevices();
-        List<AudioDeviceInfo>? audioDeviceInfo =
-            await VideoSDK.getAudioDevices();
+        cameras = await VideoSDK.getCameras();
+        List<MicrophoneDeviceInfo>? audioDeviceInfo =
+            await VideoSDK.getMics();
         if (audioDeviceInfo != null) {
           for (var device in audioDeviceInfo) {
             if (device.kind == 'audiooutput') {
               mics?.add(device);
             }
           }
-        }
-        if (kIsWeb || Platform.isWindows || Platform.isMacOS) {
-          _meeting.switchAudioDevice(widget.selectedAudioOutputDevice!);
         }
         // subscribeToChatMessages(_meeting);
         _subscribeToAgentEvents(_meeting);
@@ -1396,22 +1363,22 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
       setState(() => recordingState = status);
     });
 
-    _meeting.localParticipant.on(Events.streamEnabled, (Stream _stream) {
-      if (_stream.kind == 'video') {
+    _meeting.localParticipant.on(Events.streamEnabled, (RTCStream _stream) {
+      if (_stream.kind == MediaType.VIDEO) {
         setState(() => videoStream = _stream);
-      } else if (_stream.kind == 'audio') {
+      } else if (_stream.kind == MediaType.AUDIO) {
         setState(() => audioStream = _stream);
-      } else if (_stream.kind == 'share') {
+      } else if (_stream.kind == MediaType.SHARE) {
         setState(() => shareStream = _stream);
       }
     });
 
-    _meeting.localParticipant.on(Events.streamDisabled, (Stream _stream) {
-      if (_stream.kind == 'video' && videoStream?.id == _stream.id) {
+    _meeting.localParticipant.on(Events.streamDisabled, (RTCStream _stream) {
+      if (_stream.kind == MediaType.VIDEO && videoStream?.id == _stream.id) {
         setState(() => videoStream = null);
-      } else if (_stream.kind == 'audio' && audioStream?.id == _stream.id) {
+      } else if (_stream.kind == MediaType.AUDIO && audioStream?.id == _stream.id) {
         setState(() => audioStream = null);
-      } else if (_stream.kind == 'share' && shareStream?.id == _stream.id) {
+      } else if (_stream.kind == MediaType.SHARE && shareStream?.id == _stream.id) {
         setState(() {
           shareStream = null;
           _isScreenSharing = false;
@@ -1421,8 +1388,8 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
 
     _meeting.on(Events.presenterChanged, (_activePresenterId) {
       Participant? activePresenter = _meeting.participants[_activePresenterId];
-      Stream? _stream =
-          activePresenter?.streams.values.singleWhere((e) => e.kind == "share");
+      RTCStream? _stream =
+          activePresenter?.streams.values.singleWhere((e) => e.kind == MediaType.SHARE);
       setState(() => remoteParticipantShareStream = _stream);
     });
 
@@ -1438,10 +1405,10 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
       }
     });
 
-    _meeting.on(Events.error, (error) {
+    _meeting.on(Events.error, (VideoSDKError error) {
       debugPrint('[Events.error] $error');
       showSnackBarMessage(
-        message: "${error['name']} :: ${error['message']}",
+        message: "${error.name} :: ${error.message}",
         context: context,
       );
     });
@@ -1483,32 +1450,36 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
     });
 
     // Rebuild PiP when remote participant's camera changes
-    participant.on(Events.streamEnabled, (Stream stream) {
-      if (stream.kind == 'video') {
+    participant.on(Events.streamEnabled, (RTCStream stream) {
+      if (stream.kind == MediaType.VIDEO) {
         setState(() {});
       }
     });
 
-    participant.on(Events.streamDisabled, (Stream stream) {
-      if (stream.kind == 'video') {
+    participant.on(Events.streamDisabled, (RTCStream stream) {
+      if (stream.kind == MediaType.VIDEO) {
         setState(() {});
       }
     });
   }
 
   void subscribeToChatMessages(Room meeting) {
-    meeting.pubSub.subscribe("CHAT", (message) {
-      if (message.senderId != meeting.localParticipant.id) {
-        if (mounted && showChatSnackbar) {
-          showSnackBarMessage(
-            message: message.senderName + ": " + message.message,
-            context: context,
-          );
+    meeting.pubSub
+        .subscribe(
+      "CHAT",
+      PubSubMessageListener(onMessageReceived: (message) {
+        if (message.senderId != meeting.localParticipant.id) {
+          if (mounted && showChatSnackbar) {
+            showSnackBarMessage(
+              message: message.senderName + ": " + message.message,
+              context: context,
+            );
+          }
         }
-      }
-    }).catchError((Object e) {
+      }),
+    )
+        .catchError((Object e) {
       log("Subscribe failed: $e");
-      return PubSubMessages(messages: const []);
     });
   }
 

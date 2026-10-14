@@ -30,13 +30,13 @@ class _MeetingOrbState extends State<MeetingOrb>
 
   Color get _glowColor {
     switch (widget.agentState) {
-      case AgentState.speaking:
+      case AgentState.SPEAKING:
         return const Color(0xFF0EA5E9).withOpacity(0.08);
-      case AgentState.listening:
+      case AgentState.LISTENING:
         return const Color(0xFF9CA3AF);
-      case AgentState.thinking:
+      case AgentState.THINKING:
         return const Color(0xFF7C3AED).withOpacity(0.08);
-      case AgentState.idle:
+      case AgentState.IDLE:
         return const Color(0xFFE1E2EA).withOpacity(0.05);
     }
   }
@@ -46,7 +46,7 @@ class _MeetingOrbState extends State<MeetingOrb>
     return AnimatedBuilder(
       animation: _glowCtrl,
       builder: (_, child) {
-        final glowOpacity = widget.agentState == AgentState.idle
+        final glowOpacity = widget.agentState == AgentState.IDLE
             ? 0.0
             : 0.25 + 0.2 * _glowCtrl.value;
         return Container(
