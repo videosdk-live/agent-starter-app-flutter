@@ -355,7 +355,7 @@ class OneToOneMeetingScreenState extends State<OneToOneMeetingScreen> {
                   onTap: () {
                     setState(
                         () => _selectedAudioDeviceName = speakers[i].label);
-                    meeting.setAudioDevice(speakers[i]);
+                    meeting.changeMic(deviceId: speakers[i].deviceId);
                     Navigator.of(ctx).pop();
                   },
                   child: Padding(
